@@ -1,0 +1,60 @@
+#include <msp430.h>
+#include "libTimer.h"
+#include "buzzer.h"
+
+void delay_ms(int milliseconds) {
+
+  // 2 MHz clock frequency
+
+  // 1 ms = 2000 cycles
+
+  for (int i = 0; i < milliseconds; i++) {
+
+    __delay_cycles(16000); // Delay for 1 ms
+
+  }
+
+}
+
+int main() {
+  configureClocks();
+  buzzer_init();
+
+  int melody[] = {
+    
+    392, 349, 330, 294, 262, 247, 220, 196, // Phrase 1
+
+    392, 349, 330, 294, 262, 247, 220, 196, // Phrase 1 (repeated)
+
+    392, 349, 330, 294, 262, 247, 220, 196, // Phrase 2
+
+    392, 349, 330, 294, 262, 247, 220, 196
+    
+  };
+
+
+
+  int durations[] = {
+
+    250, 250, 250, 250, 250, 250, 250, 250, // Phrase 1
+
+    250, 250, 250, 250, 250, 250, 250, 250, // Phrase 1 (repeated)
+
+    250, 250, 250, 250, 250, 250, 250, 250, // Phrase 2
+
+    250, 250, 250, 250, 250, 250, 250, 250
+    
+  };
+  while(1){
+    for (int i = 0; i < sizeof(melody) / sizeof(melody[0]); i++) {
+
+      buzzer_set_period(2000000 / melody[i]); // Convert frequency to period
+
+      delay_ms(durations[i]); // Delay for the specified duration
+
+    }
+  }
+  buzzer_set_period(0); // Turn off the buzzer
+  
+  or_sr(0x18);          // CPU off, GIE on
+}
