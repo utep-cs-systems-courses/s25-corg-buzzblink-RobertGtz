@@ -25,6 +25,7 @@ int melody[] = {
 int currentNote = 0;
 unsigned char red_on = 1, green_on = 0;
 unsigned char led_changed = 0;
+volatile char velocityChange = 100;
 volatile int isPlaying = 0;
 
 
@@ -126,12 +127,12 @@ void __interrupt_vec(WDT_VECTOR) WDT(){
   static char delay = 0;
   static char currentBlink = 0;
   if(isPlaying){
-    if (++delay == 100){
+    if (++delay == velocityChange){
       startNote();
       delay = 0;
     }
     
-    if (++currentBlink >= 50){
+    if (++currentBlink >= (velocityChange/2)){
       state_advance();
       currentBlink = 0;
     }
@@ -145,7 +146,7 @@ void buttom_init(){
   P2DIR &= ~BUTTOMS;
 //P2IFG &= ~BUTTOMS;
 }
-
+/*
 void __interrupt_vec(PORT2_VECTOR) Port2_ISR() {
 
   if (P2IFG & BUTTOMS) { // Check if any button triggered the interrupt
@@ -164,8 +165,37 @@ void __interrupt_vec(PORT2_VECTOR) Port2_ISR() {
     P2IFG &= ~BUTTOMS; // Clear the interrupt flag
   }
 
-}
+}*/
 
+void __interrupt_vec(PORT2_VECTOR) Port2_ISR() {
+
+  if (P2IFG & BIT0) {
+    __delay_cycles(2000); // 1 ms delay at 2 MHz
+    velocityChange = 100;
+    isPlaying = !isPlaying;
+    if (!isPlaying) {
+      buzzer_set_period(0);
+      P1OUT &= ~LEDS;
+      
+    }
+  }
+  if (P2IFG & BIT1) {
+    // __delay_cycles(2000); // 1 ms delay at 2 MHz
+     
+    P1OUT &= ~LEDS;
+  }
+  if(P2IFG & BIT2){
+    if (velocityChange > 50) {
+      velocityChange -= 10;
+    }
+  }
+  if (P2IFG & BIT3) {
+    if (velocityChange < 300) {
+      velocityChange += 10;
+    }
+  }
+  P2IFG &= ~BUTTOMS;
+}
 
 int main() {
   configureClocks();
